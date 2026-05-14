@@ -1,39 +1,62 @@
-import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { City } from '../../models/city.model';
-import { WeatherRecord } from '../../models/weather-record.model';
-import { WeatherRecordService } from '../../services/weather-record.service';
+import { WeatherDetail } from '../../models/weather-detail.model';
+import { WeatherService } from '../../services/weather.service';
+import { CityService } from '../../services/city.service';
 
-/*
- * Implementar:
- * HU-03 — Detalle de Ciudad con Clima (Ver TALLER.md Parte B)
- * HU-04 — Historial de Registros de Clima (Ver TALLER.md Parte D)
- */
 
 @Component({
   selector: 'app-city-detail',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './city-detail.component.html'
+  templateUrl: './city-detail.component.html',
 })
 export class CityDetailComponent implements OnChanges {
-  private weatherRecordService = inject(WeatherRecordService);
-
   @Input() city!: City;
 
-  weatherRecords: WeatherRecord[] = [];
+  weatherDetail: WeatherDetail | null = null;
+  loading: boolean = false;
+  weatherRecords: any[] = [];
+
+  constructor(
+    private weatherService: WeatherService,
+    private cityService: CityService
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['city'] && this.city) {
-      this.weatherRecordService.getRecords(this.city.id)
-        .subscribe(records => this.weatherRecords = records);
-
-      // TODO HU-03: Agregar aquí el obtener el clima de la ciudad
+      this.loadWeather();
+      this.loadRecords();
     }
   }
 
-  saveWeather(): void {
-    // TODO HU-04: Agregar aquí el código para guardar un nuevo registro de clima
-    //             Al completar, recarga la lista con weatherRecordService.getRecords(this.city.id).
+  loadWeather(): void {
+    this.loading = true;
+    this.weatherDetail = null;
+    this.weatherService.getWeather(this.city.name).subscribe({
+      next: data => {
+        this.weatherDetail = data;
+        this.loading = false;
+      },
+      error: () => {
+        this.loading = false;
+      }
+    });
+  }
+
+  loadRecords(): void {
+    this.cityService.getWeatherRecords(this.city.id).subscribe(
+      data => this.weatherRecords = data
+    );
+  }
+
+  saveCurrentWeather(): void {
+    if (!this.weatherDetail) return;
+    const payload = {
+      tempC: this.weatherDetail.temp_c,
+      condition: this.weatherDetail.condition,
+      humidity: this.weatherDetail.humidity
+    };
+    this.cityService.saveWeatherRecord(this.city.id, payload).subscribe(() => {
+      this.loadRecords();
+    });
   }
 }

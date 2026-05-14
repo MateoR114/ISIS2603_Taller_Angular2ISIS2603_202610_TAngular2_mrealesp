@@ -1,6 +1,17 @@
-<div class="card mb-4">
-  <div class="card-body">
-    <h5 class="card-title">Nueva Ciudad</h5>
-    <p class="text-muted">Formulario por implementar.</p>
-  </div>
+<div>
+  <h3>Crear Ciudad</h3>
+
+  <label>Nombre:
+    <input [(ngModel)]="cityName" placeholder="Nombre de la ciudad" />
+  </label>
+
+  <label>País:
+    <select [(ngModel)]="selectedCountryId">
+      <option [ngValue]="null" disabled>Seleccione un país</option>
+      <option *ngFor="let c of countries" [ngValue]="c.id">{{ c.name }}</option>
+    </select>
+  </label>
+
+  <button (click)="save()" [disabled]="!isFormValid()">Guardar</button>
+  <button (click)="cancel()">Cancelar</button>
 </div>
